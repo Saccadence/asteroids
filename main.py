@@ -3,6 +3,8 @@ import constants    # Constants.py library
 from constants import *
 
 
+
+   
 def main():
     print("Starting asteroids!")
     pygame.init     # Start pygame
