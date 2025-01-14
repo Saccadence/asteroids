@@ -1,3 +1,4 @@
+import sys
 import pygame       # Pygame library (source venv/bin/activate)
 from constants import *
 from player import Player
@@ -40,6 +41,10 @@ def main():
         # Update
         for obj in updatable:
             obj.update(dt)
+        for asteroid in asteroids:
+            if asteroid.detect_collision(player):
+                print("Game over!")
+                sys.exit()
         
         # Render
         screen.fill((0, 0, 0))  # Fill screen with black
