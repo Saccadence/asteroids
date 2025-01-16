@@ -28,6 +28,8 @@ class AsteroidField(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.spawn_timer = 0.0
+        self.big_one_timer = 0
+        self.big_one = 0
     
     def spawn(self, radius, position, velocity):
         asteroid = Asteroid(position.x, position.y, radius)
@@ -35,8 +37,13 @@ class AsteroidField(pygame.sprite.Sprite):
     
     def update(self, dt):
         self.spawn_timer += dt
+        if self.big_one == 0:
+            self.big_one = random.randint(15, 45)
+        self.big_one_timer += dt
+        
         if self.spawn_timer > ASTEROID_SPAWN_RATE:
             self.spawn_timer = 0
+            
 
             # Spawn a new asteroid at a random edge
             edge = random.choice(self.edges)
@@ -45,4 +52,9 @@ class AsteroidField(pygame.sprite.Sprite):
             velocity = velocity.rotate(random.randint(-30, 30))
             position = edge[1](random.uniform(0,1))
             kind = random.randint(1, ASTEROID_KINDS)
-            self.spawn(ASTEROID_MIN_RADIUS * kind, position, velocity)
+            if self.big_one_timer >= self.big_one:
+                self.spawn(ASTEROID_MIN_RADIUS * 5, position, velocity)
+                self.big_one_timer = 0
+                self.big_one = 0
+            else:
+                self.spawn(ASTEROID_MIN_RADIUS * kind, position, velocity)
