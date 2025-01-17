@@ -57,17 +57,21 @@ def main():
             if asteroid.detect_collision(player):
                 print("Game over!")
                 sys.exit()
+            for asteroid2 in asteroids:
+                if asteroid != asteroid2:
+                    if asteroid.bounced == False and asteroid.detect_collision(asteroid2):
+                        asteroid.bounce_off(asteroid2)
+                    elif asteroid.bounced and asteroid.detect_collision(asteroid2) == False:
+                        asteroid.bounced = False
             for shot in shots:
                 if asteroid.detect_collision(shot):
                     shot.kill()
                     kill_score = KillScore(asteroid, kill_font)
-                    score +=  asteroid.radius * SCORE_GAIN
+                    score +=  int(asteroid.radius * SCORE_GAIN)
                     asteroid.split()
         for kill_score in kill_scores:
             if kill_score.kill_score_time <= 0:
                 kill_score.kill()
-        if big_one >= big_one_time:
-            asteroid
         
 
         # Render

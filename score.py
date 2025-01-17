@@ -9,7 +9,7 @@ class KillScore(pygame.sprite.Sprite):
             super().__init__(self.containers)
         else:
             super().__init__()
-        self.kill_scored = asteroid.radius * SCORE_GAIN
+        self.kill_scored = int(asteroid.radius * SCORE_GAIN)
         self.kill_score_time = SCORE_TIME
         self.kill_text_position = (asteroid.position.x, asteroid.position.y)
         self.kill_font = kill_font

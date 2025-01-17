@@ -51,10 +51,10 @@ class AsteroidField(pygame.sprite.Sprite):
             velocity = edge[0] * speed
             velocity = velocity.rotate(random.randint(-30, 30))
             position = edge[1](random.uniform(0,1))
-            kind = random.randint(1, ASTEROID_KINDS)
+            random_size = random.uniform(1, 3)
             if self.big_one_timer >= self.big_one:
                 self.spawn(ASTEROID_MIN_RADIUS * 5, position, velocity)
                 self.big_one_timer = 0
                 self.big_one = 0
             else:
-                self.spawn(ASTEROID_MIN_RADIUS * kind, position, velocity)
+                self.spawn(ASTEROID_MIN_RADIUS * random_size, position, velocity)
