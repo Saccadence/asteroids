@@ -63,6 +63,7 @@ def main():
                         asteroid.bounce_off(asteroid2)
                     elif asteroid.bounced and asteroid.detect_collision(asteroid2) == False:
                         asteroid.bounced = False
+                    # CHECK POSITIONS
             for shot in shots:
                 if asteroid.detect_collision(shot):
                     shot.kill()
@@ -89,7 +90,7 @@ def main():
         pygame.display.flip()   # Refresh screen
 
         # Establish (240 FPS) Frame Limit
-        dt = clock.tick(240) / 1000  # Store time since last called (in seconds)
+        dt = clock.tick(60) / 1000  # Store time since last called (in seconds)
 
 
 if __name__ == "__main__":

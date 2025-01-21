@@ -11,6 +11,7 @@ class CircleShape(pygame.sprite.Sprite):
         self.position = pygame.Vector2(x, y)
         self.velocity = pygame.Vector2(0, 0)
         self.radius = radius
+        self.mass = radius ** 2
         self.bounced = False
         
     def draw(self, screen):
@@ -34,8 +35,8 @@ class CircleShape(pygame.sprite.Sprite):
         v2t = other.velocity.dot(tangent)
 
         # Elastic collision formula for normal components
-        v1n_final = (v1n * (self.radius - other.radius) + 2 * other.radius * v2n) / (self.radius + other.radius)
-        v2n_final = (v2n * (other.radius - self.radius) + 2 * self.radius * v1n) / (self.radius + other.radius)
+        v1n_final = (v1n * (self.mass - other.mass) + 2 * other.mass * v2n) / (self.mass + other.mass)
+        v2n_final = (v2n * (other.mass - self.mass) + 2 * self.mass * v1n) / (self.mass + other.mass)
 
         # Convert scalar normal and tangential velocities back to vectors
         self.velocity = v1n_final * normal + v1t * tangent
