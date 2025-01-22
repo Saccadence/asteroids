@@ -17,7 +17,7 @@ def main():
 
     # Define Objects and Variables
     clock = pygame.time.Clock()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE, vsync=1)
     score = 0
     score_font = pygame.font.Font("Silkscreen-Regular.ttf", 36)
     kill_font = pygame.font.Font("Silkscreen-Regular.ttf", 16)
@@ -37,8 +37,6 @@ def main():
     asteroid_field = AsteroidField()
 
     player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-    big_one = 0
-    big_one_time = random.randint(15, 45)
 
     dt = 0
 
