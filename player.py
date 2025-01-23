@@ -14,6 +14,7 @@ class Player(CircleShape):
         self.move_time = 0
         self.speed = 0
         self.shot_time = 0
+        self.timer = 0
     
     def triangle(self):
         # Define coordinates for points on triangle *relative* to center
@@ -39,10 +40,17 @@ class Player(CircleShape):
             self.position += (self.speed + direction * PLAYER_SPEED) * dt
         if self.momentum > 0:
             self.position += (self.speed + direction * PLAYER_SPEED) * dt
-        print(f"Momentum = {self.momentum}\nSpeed = {self.speed}")
+        self.timer += dt
+        print(f"Momentum = {self.momentum}\nSpeed = {self.speed}\nTime = {self.timer}")
         
     def accelerate(self, dt):
+        
+        #
+        # PULL VELOCITY RELATIVE TO MAX AND USE THAT FOR ACCEL AND DECEL EQUATIONS
+        #
+        
         # Decelerate
+        decel_time = (PLAYER_DECELERATE - PLAYER_ACCELERATE) / 
         if not self.keys[pygame.K_w] or self.keys[pygame.K_s]:
             if self.move_time < 0:
                 self.move_time += dt
@@ -51,7 +59,7 @@ class Player(CircleShape):
             if self.move_time == 0:
                 self.momentum = 0
             else:
-                self.momentum /= PLAYER_DECELERATE
+                self.momentum -= 
         else: # Accelerate
             if self.keys[pygame.K_w]:
                 self.move_time += dt
@@ -67,10 +75,11 @@ class Player(CircleShape):
                     self.move_time = PLAYER_ACCELERATE
                 else:
                     self.move_time += dt
-            if self.move_time == 0:
+            try: # Calculate momentum % relative to "terminal" velocity
+                if self.momentum >= PLAYER_ACCELERATE:
+                    
+            except ZeroDivisionError:
                 self.momentum = 0
-            else:
-                self.momentum /= PLAYER_ACCELERATE
             
     def shoot(self):
         if self.shot_time <= 0:
