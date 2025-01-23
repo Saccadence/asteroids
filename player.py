@@ -41,7 +41,7 @@ class Player(CircleShape):
         if self.momentum > 0:
             self.position += (self.speed + direction * PLAYER_SPEED) * dt
         self.timer += dt
-        print(f"Momentum = {self.momentum}\nSpeed = {self.speed}\nTime = {self.timer}")
+        # print(f"Momentum = {self.momentum}\nSpeed = {self.speed}\nTime = {self.timer}")
         
     def accelerate(self, dt):
         
@@ -49,8 +49,13 @@ class Player(CircleShape):
         # PULL VELOCITY RELATIVE TO MAX AND USE THAT FOR ACCEL AND DECEL EQUATIONS
         #
         
+        # Determine Velocity of Player
+        velocity_percent = pygame.math.Vector2(self.speed)
+        print(velocity_percent.magnitude())
+        
+        
         # Decelerate
-        decel_time = (PLAYER_DECELERATE - PLAYER_ACCELERATE) / 
+        decel_time = (PLAYER_DECELERATE - PLAYER_ACCELERATE) / PLAYER_ACCELERATE
         if not self.keys[pygame.K_w] or self.keys[pygame.K_s]:
             if self.move_time < 0:
                 self.move_time += dt
@@ -59,7 +64,7 @@ class Player(CircleShape):
             if self.move_time == 0:
                 self.momentum = 0
             else:
-                self.momentum -= 
+                self.momentum -= decel_time * dt
         else: # Accelerate
             if self.keys[pygame.K_w]:
                 self.move_time += dt
@@ -77,7 +82,7 @@ class Player(CircleShape):
                     self.move_time += dt
             try: # Calculate momentum % relative to "terminal" velocity
                 if self.momentum >= PLAYER_ACCELERATE:
-                    
+                    pass
             except ZeroDivisionError:
                 self.momentum = 0
             
