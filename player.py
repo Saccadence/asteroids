@@ -36,7 +36,7 @@ class Player(CircleShape):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
         self.position += forward * PLAYER_SPEED * self.momentum * dt
         
-    def inertia(self, dt):
+    def accelerate(self, dt):
         if self.keys[pygame.K_w] or self.keys[pygame.K_s]:
             self.move_time += dt
         else:
@@ -49,7 +49,8 @@ class Player(CircleShape):
                 self.move_time = -PLAYER_ACCELERATE
             else:
                 self.move_time = PLAYER_ACCELERATE
-
+        
+    def inertia(self, dt):
         self.momentum = self.move_time / PLAYER_ACCELERATE 
         print(self.momentum)
         
