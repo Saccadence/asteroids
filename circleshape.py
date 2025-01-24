@@ -23,6 +23,17 @@ class CircleShape(pygame.sprite.Sprite):
     def detect_collision(self, other):
         return self.position.distance_to(other.position) < (self.radius + other.radius)
 
+    def check_limit(self, input, limit):
+        try:
+            if input > 0 and input < limit:
+                return input
+            elif input >= limit:
+                return limit
+            elif input <= 0:
+                return 0
+        except:
+            raise Exception("check_limit broke")
+
     def bounce_off(self, other):        
         # Normal vector
         normal = (self.position - other.position).normalize()

@@ -11,7 +11,9 @@ class Player(CircleShape):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.momentum = 0
-        self.move_time = 0
+        self.accel_time = 0
+        self.decel_time = 0
+        self.inertia = 0
         self.speed = 0
         self.shot_time = 0
         self.timer = 0
@@ -34,57 +36,28 @@ class Player(CircleShape):
         self.rotation += PLAYER_TURN_SPEED * dt
         
     def move(self, dt):
-        direction = pygame.Vector2(0, 1).rotate(self.rotation)
-        self.speed = direction * PLAYER_SPEED * abs(self.momentum)
-        if self.momentum < 0:
-            self.position += (self.speed + direction * PLAYER_SPEED) * dt
-        if self.momentum > 0:
-            self.position += (self.speed + direction * PLAYER_SPEED) * dt
-        self.timer += dt
-        # print(f"Momentum = {self.momentum}\nSpeed = {self.speed}\nTime = {self.timer}")
+        forward = pygame.Vector2(0, 1).rotate(self.rotation)
+        self.speed = self.momentum * PLAYER_SPEED
+        self.position += forward * self.speed * dt
+        print(f"Momentum = {self.momentum} | Accel = {self.accel_time} | Decel = {self.decel_time}\nSpeed = {self.speed}")
         
     def accelerate(self, dt):
-        
-        #
-        # PULL VELOCITY RELATIVE TO MAX AND USE THAT FOR ACCEL AND DECEL EQUATIONS
-        #
-        
-        # Determine Velocity of Player
-        velocity_percent = pygame.math.Vector2(self.speed)
-        print(velocity_percent.magnitude())
-        
-        
-        # Decelerate
-        decel_time = (PLAYER_DECELERATE - PLAYER_ACCELERATE) / PLAYER_ACCELERATE
-        if not self.keys[pygame.K_w] or self.keys[pygame.K_s]:
-            if self.move_time < 0:
-                self.move_time += dt
-            if self.move_time > 0:
-                self.move_time -= dt
-            if self.move_time == 0:
-                self.momentum = 0
-            else:
-                self.momentum -= decel_time * dt
-        else: # Accelerate
-            if self.keys[pygame.K_w]:
-                self.move_time += dt
-            if self.keys[pygame.K_s]:
-                self.move_time -= dt
-            if self.move_time < 0:
-                if self.move_time < -PLAYER_ACCELERATE:
-                    self.move_time = -PLAYER_ACCELERATE
-                else:
-                    self.move_time += dt
-            if self.move_time > 0:
-                if self.move_time > PLAYER_ACCELERATE:
-                    self.move_time = PLAYER_ACCELERATE
-                else:
-                    self.move_time += dt
-            try: # Calculate momentum % relative to "terminal" velocity
-                if self.momentum >= PLAYER_ACCELERATE:
-                    pass
-            except ZeroDivisionError:
-                self.momentum = 0
+        # Acceleration
+        if self.keys[pygame.K_w] or self.keys[pygame.K_s]:
+            if self.accel_time > 0 or self.accel_time < PLAYER_ACCELERATE:
+                self.accel_time += dt
+            if self.decel_time > 0 or self.decel_time < PLAYER_DECELERATE:
+                self.decel_time -= dt
+        # Speed Decay
+        else:
+            if self.accel_time > 0 or self.accel_time < PLAYER_ACCELERATE:
+                self.accel_time -= dt
+            if self.decel_time > 0 or self.decel_time < PLAYER_DECELERATE:
+                self.decel_time += dt
+        self.accel_time = self.check_limit(self.accel_time, PLAYER_ACCELERATE)
+        self.decel_time = self.check_limit(self.decel_time, PLAYER_DECELERATE)
+        # Momentum as difference of percentage accel - percentage decel
+        self.momentum = abs((self.accel_time / PLAYER_ACCELERATE) - (self.decel_time / PLAYER_DECELERATE))
             
     def shoot(self):
         if self.shot_time <= 0:
@@ -97,17 +70,16 @@ class Player(CircleShape):
     def update(self, dt):
         self.shot_time -= dt
         self.keys = pygame.key.get_pressed()
+        self.inertia = self.position + pygame.Vector2(0, 1).rotate(self.rotation) * self.speed
         self.accelerate(dt)
         
         if self.keys[pygame.K_w]:
             self.move(dt)
-        if self.keys[pygame.K_a]:
-            self.rotate(-dt)
         if self.keys[pygame.K_s]:
             self.move(-dt)
         if self.keys[pygame.K_d]:
             self.rotate(dt)
+        if self.keys[pygame.K_a]:
+            self.rotate(-dt)
         if self.keys[pygame.K_SPACE]:
             self.shoot()
-        if not self.keys[pygame.K_w] or self.keys[pygame.K_s]:
-            self.move(dt)
