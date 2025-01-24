@@ -1,15 +1,19 @@
 import pygame
+import sys
 from constants import *
 from circleshape import CircleShape
 from shot import Shot
+from raycasting import Raycasting
 
 
 class Player(CircleShape):
-    
+    rays = pygame.sprite.Group()
+    Raycasting.containers = rays
     
     def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
+        self.rotation_accel = 0
         self.momentum = 0
         self.accel_time = 0
         self.decel_time = 0
@@ -33,13 +37,17 @@ class Player(CircleShape):
         pygame.draw.polygon(screen, (255, 255, 255), self.triangle(), 2)
         
     def rotate(self, dt):
+        if self.rotation_accel < PLAYER_TURN_ACCELERATION:
+            self.rotation_accel += dt
+        else:
+            self.rotation_accel = self.rotation_accel.check_limit(self.rotation_accel, PLAYER_TURN_ACCELERATION)
         self.rotation += PLAYER_TURN_SPEED * dt
         
     def move(self, dt):
-        forward = pygame.Vector2(0, 1).rotate(self.rotation)
-        self.speed = self.momentum * PLAYER_SPEED
-        self.position += forward * self.speed * dt
-        print(f"Momentum = {self.momentum} | Accel = {self.accel_time} | Decel = {self.decel_time}\nSpeed = {self.speed}")
+        for ray in rays:
+            forward = pygame.Vector2(0, 1).rotate(self.rotation)
+            self.speed = self.momentum * PLAYER_SPEED
+            self.position += (forward * self.speed * dt) * 0.75
         
     def accelerate(self, dt):
         # Acceleration
@@ -68,10 +76,13 @@ class Player(CircleShape):
             shot.velocity = pygame.Vector2(0,1).rotate(self.rotation) * PLAYER_SHOOT_SPEED
     
     def update(self, dt):
+        self.timer += dt
         self.shot_time -= dt
         self.keys = pygame.key.get_pressed()
-        self.inertia = self.position + pygame.Vector2(0, 1).rotate(self.rotation) * self.speed
+        self.inertia = pygame.Vector2(0, 1).rotate(self.rotation) * self.speed * self.momentum
         self.accelerate(dt)
+        if self.timer > 3 * dt:
+            ray = (self.position, self.speed)
         
         if self.keys[pygame.K_w]:
             self.move(dt)
@@ -83,3 +94,4 @@ class Player(CircleShape):
             self.rotate(-dt)
         if self.keys[pygame.K_SPACE]:
             self.shoot()
+        print(f"Accel = {self.accel_time} | Decel = {self.decel_time}\nMomentum = {self.momentum} | Speed = {self.speed}\nPosition = {self.position}")
