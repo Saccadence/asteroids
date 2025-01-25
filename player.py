@@ -7,20 +7,18 @@ from raycasting import Raycasting
 
 
 class Player(CircleShape):
-    rays = pygame.sprite.Group()
-    Raycasting.containers = rays
+    
     
     def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.rotation_accel = 0
-        self.momentum = 0
-        self.accel_time = 0
-        self.decel_time = 0
-        self.inertia = 0
-        self.speed = 0
+        self.velocity = pygame.Vector2(0, 0)
+        self.angular_velocity = 0
         self.shot_time = 0
         self.timer = 0
+        self.rays = pygame.sprite.Group()
+        Raycasting.containers = self.rays
     
     def triangle(self):
         # Define coordinates for points on triangle *relative* to center
@@ -35,37 +33,43 @@ class Player(CircleShape):
     
     def draw(self, screen):
         pygame.draw.polygon(screen, (255, 255, 255), self.triangle(), 2)
+        for ray in self.rays:
+            pygame.draw.line(screen, (255, 0, 0), self.position, self.position + ray.vector, 2)
+
         
-    def rotate(self, dt):
-        if self.rotation_accel < PLAYER_TURN_ACCELERATION:
-            self.rotation_accel += dt
+    def rotate(self, dt, direction):
+        if abs(self.rotation_accel) < PLAYER_MAX_ROTATION_ACCEL:
+            self.rotation_accel += direction * PLAYER_ROTATION_INCREMENT * dt
         else:
-            self.rotation_accel = self.rotation_accel.check_limit(self.rotation_accel, PLAYER_TURN_ACCELERATION)
-        self.rotation += PLAYER_TURN_SPEED * dt
-        
-    def move(self, dt):
-        for ray in rays:
-            forward = pygame.Vector2(0, 1).rotate(self.rotation)
-            self.speed = self.momentum * PLAYER_SPEED
-            self.position += (forward * self.speed * dt) * 0.75
-        
+            self.rotation_accel = max(min(self.rotation_accel, PLAYER_MAX_ROTATION_ACCEL), -PLAYER_MAX_ROTATION_ACCEL)
+        self.rotation += self.rotation_accel * dt
+        self.rotation %= 360
+        self.angular_velocity = self.rotation_accel * dt
+
     def accelerate(self, dt):
-        # Acceleration
-        if self.keys[pygame.K_w] or self.keys[pygame.K_s]:
-            if self.accel_time > 0 or self.accel_time < PLAYER_ACCELERATE:
-                self.accel_time += dt
-            if self.decel_time > 0 or self.decel_time < PLAYER_DECELERATE:
-                self.decel_time -= dt
-        # Speed Decay
-        else:
-            if self.accel_time > 0 or self.accel_time < PLAYER_ACCELERATE:
-                self.accel_time -= dt
-            if self.decel_time > 0 or self.decel_time < PLAYER_DECELERATE:
-                self.decel_time += dt
-        self.accel_time = self.check_limit(self.accel_time, PLAYER_ACCELERATE)
-        self.decel_time = self.check_limit(self.decel_time, PLAYER_DECELERATE)
-        # Momentum as difference of percentage accel - percentage decel
-        self.momentum = abs((self.accel_time / PLAYER_ACCELERATE) - (self.decel_time / PLAYER_DECELERATE))
+        forward = pygame.Vector2(0, 1).rotate(self.rotation)
+        backward = -forward
+        # Apply thrust when pressing the W key (forward thrust)
+        if self.keys[pygame.K_w]:
+            if self.velocity.length() < PLAYER_MAX_SPEED:
+                self.velocity += forward * PLAYER_THRUST * dt  # Accelerate forward
+            else:
+                self.velocity.scale_to_length(PLAYER_MAX_SPEED)  # Cap forward speed
+        # Apply reverse thrust when pressing the S key (backward thrust)
+        if self.keys[pygame.K_s]:
+            if self.velocity.length() > -PLAYER_MAX_REVERSE_SPEED:
+                self.velocity += backward * PLAYER_THRUST * dt  # Accelerate backward (reverse)
+            else:
+                self.velocity.scale_to_length(-PLAYER_MAX_REVERSE_SPEED)  # Cap reverse speed
+    
+    def apply_drag(self, dt):
+        # Apply some form of drag to reduce velocity when no keys are pressed
+        if not self.keys[pygame.K_w] and not self.keys[pygame.K_s]:
+            self.velocity *= (1 - PLAYER_DRAG * dt)  # Slow down gradually
+        # Limit the velocity to prevent it from going below zero (for reverse)
+        if self.velocity.length() < 0.1:
+            self.velocity = pygame.Vector2(0, 0)  # Stop when the velocity is very small
+
             
     def shoot(self):
         if self.shot_time <= 0:
@@ -76,22 +80,48 @@ class Player(CircleShape):
             shot.velocity = pygame.Vector2(0,1).rotate(self.rotation) * PLAYER_SHOOT_SPEED
     
     def update(self, dt):
+        direction = 0
         self.timer += dt
         self.shot_time -= dt
         self.keys = pygame.key.get_pressed()
-        self.inertia = pygame.Vector2(0, 1).rotate(self.rotation) * self.speed * self.momentum
-        self.accelerate(dt)
-        if self.timer > 3 * dt:
-            ray = (self.position, self.speed)
-        
-        if self.keys[pygame.K_w]:
-            self.move(dt)
-        if self.keys[pygame.K_s]:
-            self.move(-dt)
-        if self.keys[pygame.K_d]:
-            self.rotate(dt)
-        if self.keys[pygame.K_a]:
-            self.rotate(-dt)
         if self.keys[pygame.K_SPACE]:
             self.shoot()
-        print(f"Accel = {self.accel_time} | Decel = {self.decel_time}\nMomentum = {self.momentum} | Speed = {self.speed}\nPosition = {self.position}")
+            
+        if self.keys[pygame.K_d]:
+            self.rotate(dt, 1)
+        if self.keys[pygame.K_a]:
+            self.rotate(-dt, -1)
+            
+        self.accelerate(dt)
+        self.apply_drag(dt)
+        
+        if self.timer > 0.01:
+            forward = pygame.Vector2(0, 1).rotate(self.rotation)
+            ray_magnitude = self.velocity.magnitude()
+            new_ray = Raycasting(self.position, forward * ray_magnitude)
+            self.rays.add(new_ray)
+            self.timer = 0
+        
+        total_ray_vector = pygame.Vector2(0, 0)
+        ray_count = 0
+        for ray in self.rays:
+            self.position += ray.vector * dt
+            ray.decay -= dt * RAY_DECAY_RATE  # Decrease ray magnitude
+            if ray.vector.length() > 0.001:
+                ray.vector.scale_to_length(max(ray.decay, 0))  # Scale vector length to decay value
+                total_ray_vector += ray.vector
+                ray_count += 1
+            else:
+                ray.vector = pygame.Vector2(0,0)
+            if ray.decay <= 0:
+                ray.kill()  # Remove expired rays
+        
+        if ray_count > 0:
+            average_ray_vector = total_ray_vector / ray_count
+            self.velocity += average_ray_vector * RAY_VELOCITY_FACTOR * dt  # Control ray impact
+        
+        self.position += self.velocity * dt
+        
+        # Screen wrapping
+        self.position.x %= SCREEN_WIDTH
+        self.position.y %= SCREEN_HEIGHT

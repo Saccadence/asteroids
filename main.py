@@ -89,7 +89,7 @@ def main():
         pygame.display.flip()   # Refresh screen
 
         # Establish (240 FPS) Frame Limit
-        dt = clock.tick(60) / 1000  # Store time since last called (in seconds)
+        dt = clock.tick(240) / 1000  # Store time since last called (in seconds)
 
 
 if __name__ == "__main__":
